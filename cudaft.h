@@ -1,5 +1,5 @@
 // 
-// Discrete fourier transform class
+// Discrete fourier transform class using CUDA for matrix multiplication
 //
 // 2022, Jonathan Tainer
 //
