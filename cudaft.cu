@@ -6,6 +6,7 @@
 
 #include "cudaft.h"
 #include "complex.h"
+#include "matmul.h"
 
 #include <cuda.h>
 #include <stdlib.h>
@@ -24,7 +25,7 @@ CudaFT::~CudaFT() {
 	cudaFree(devOutput);
 }
 
-void CudaFT::setDimensions(unsigned int n) {
+void CudaFT::setDims(unsigned int n) {
 	
 	// Allocate or reallocate an appropriate amount of GPU memory
 	cudaFree(devMatrix);
@@ -37,25 +38,36 @@ void CudaFT::setDimensions(unsigned int n) {
 	cudaMalloc((void**)&devInput, sizeof(float) * N);
 	cudaMalloc((void**)&devOutput, sizeof(Complex) * N);
 
-	// Compute the DFT matrix in system memory
-	Complex* sysMatrix = (Complex*)malloc(sizeof(Complex) * N * N);
-	
-	Complex omega;
-	omega.real = cosf(-2 * M_PI / N);
-	omega.imag = sinf(-2 * M_PI / N);
+	// Call kernel to construct DFT matrix in GPU memory
+	genmat<<<(N / 256) + 1, 256>>>(devMatrix, N);
 
-	for (unsigned int y = 0; y < N; y++) {
-		for (unsigned int x = 0; x < N; x++) {
-			sysMatrix[(y * N) + x] = omega.exp(x * y);
-		}
-	}
-
-	// Copy DFT matrix to GPU memory
-	cudaMemcpy(devMatrix, sysMatrix, sizeof(Complex) * N * N, cudaMemcpyHostToDevice);
-
-	free(sysMatrix);
 }
 
-void CudaFT::phasorTransform(float* inputBuffer, Complex* outputBuffer) {
+void CudaFT::transform(float* inputBuffer, Complex* outputBuffer) {
 	
+	// Copy input buffer to GPU memory
+	cudaMemcpy(devInput, inputBuffer, sizeof(float) * N, cudaMemcpyHostToDevice);
+	
+	// Spawn kernel threads
+	matmul<<<(N / 256) + 1, 256>>>(devMatrix, devInput, devOutput, N);
+	
+	// Copy output buffer from GPU memory to system memory
+	cudaMemcpy(outputBuffer, devOutput, sizeof(Complex) * N, cudaMemcpyDeviceToHost);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

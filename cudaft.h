@@ -11,9 +11,8 @@ public:
 	CudaFT();
 	~CudaFT();
 
-	void setDimensions(unsigned int n);
-	void phasorTransform(float* inputBuffer, Complex* outputBuffer);
-	void scalarTransform(float* inputBuffer, Complex* outputBuffer);
+	void setDims(unsigned int n);
+	void transform(float* inputBuffer, Complex* outputBuffer);
 private:
 	// Dimensions of the matrix
 	unsigned int N;
